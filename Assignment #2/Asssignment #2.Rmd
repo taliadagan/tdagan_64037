@@ -1,0 +1,141 @@
+---
+title: 'Assignment #2 Data Mining'
+output:
+  word_document: default
+  html_document: default
+date: '2022-04-01'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##Question 1: What is the key idea behind bagging? Can bagging deal  both  with  high  variance  (overfitting) and high bias (under fitting)? 
+```{r}
+#The key idea behind bagging is to reduce the variance for algorithms that have high variance. Multiple weak learners can work better than a single strong learner. Bagging can only deal with high variance by reducing the variance. Bagging does not deal with the underfiting (the bias). 
+```
+
+##Question 2: Why bagging models are computationally more efficient when compared to boosting models with the same number of weak learners?
+```{r}
+#Bagging models are computationally more efficient compared to boosting models with the same number of weak learners because the base learners grow independently of each other in parallel, which reduces the overall computational complexity of the training phase.  
+```
+
+##Question 3: James is thinking of creating an ensemble mode to predict whether a given stock will go up or down in the next week.  He has trained several decision tree models but each model is not performing any better than a random model. The models are also very similar to each other. Do you think creating an ensemble model by combining these tree models can boost the performance?
+```{r}
+#Creating an ensemble model by combining the tree models will not be able to boost performance because the models are not diverse. Since the models are very similar to each other, the performance will not be boosted. The key requirement of the ensemble models is to have a sufficiently diverse group of base learners. There is no point of combining similar base learners because they will have similar predictions. 
+```
+
+##Question 4:Consider the following Table that classifies some objects into two classes of edible (+) and non- edible (-), based on some characteristics such as the object color, size and shape. What would be the Information gain for splitting the dataset based on the “Size” attribute?
+```{r}
+#The information gain for splitting the data set based on the "size" attribute is .10578144. 
+#This is calculated by using the information gain formula (info gain = entropy(parent) - [average entropy(children)])). 
+#Information gain tells us how important a given attribute of the feature vector. So in this case, the information gain foe the size attribute is .10578144 important.  
+```
+
+##Question 5:  Why is it important that the m parameter (number of attributes available at each split) to be optimally set in random forest models? Discuss the implications of setting this parameter too small or too large.
+```{r}
+#It is important that the m parameter to be optimally set in random forest models. This is because we want to achieve the most information gain and diversity in the data from nodes. This is so the first decision tree from beginning to end will have maximum diversity in the nodes. If the m parameter is set too small or too large, the model can be impure. There would not be enough information gain and diversity within the data. 
+```
+
+```{r}
+#loading packages 
+library(ISLR)
+library(dplyr)
+library(glmnet)
+library(caret)
+```
+
+
+```{r}
+#Using dplyr to select sales, price, advertising, population, age, income, and education 
+Carseats_Filtered <- Carseats %>% select("Sales", "Price", 
+"Advertising","Population","Age","Income","Education")
+```
+
+#Build  a  decision  tree  regression  model  to  predict  Sales  based  on  all  other  attributes ("Price", "Advertising", "Population", "Age", "Income" and "Education").  Which attribute is used at the top of the tree (the root node) for splitting?Hint: you can either plot () and text()functions or use the summary() function to see the decision tree rules.
+```{r}
+#install and loading packages needed
+#install.packages("rpart")
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+mydata <- Carseats_Filtered
+Model_1 = rpart(Sales~.,data=mydata, method='anova')
+#Summary of Model 1
+summary(Model_1)
+#Plotting model 1 
+plot(Model_1)
+text(Model_1)
+#The attribute that is at the top of the tree is Price. 
+```
+#Question #2: Consider the following input:Sales=9, Price=6.54, Population=124, Advertising=0, Age=76, Income= 110, Education=10. What will be the estimated Sales for this record using the decision tree model? 
+```{r}
+Model_2 = rpart(Sales~.,data=mydata, method='anova', control = rpart.control(minsplit = 60 ))
+summary(Model_2)
+print(Model_2)
+plot(Model_2)
+text(Model_2)
+new_model <- data.frame(Price=6.54,  Population=124, Advertising=0, Age=76, Income= 110, Education=10)
+predict(Model_1, newdata=new_model)
+#The estimated sales for this record using a decision tree model is 9.5862.
+```
+
+
+
+
+```{r}
+#Question 3:  Use the caret function to train a random forest (method=’rf’) for the same dataset. Use the caret default settings. By default, caret will examine the “mtry” values of 2,4, and 6. Recall that mtry is the number of attributes available for splitting at each splitting node. Which mtry value gives the best performance?  
+size = floor(0.70*nrow(Carseats_Filtered))
+size
+set.seed(123)
+train = sample(seq_len(nrow(Carseats_Filtered)), size = size)
+traindata = Carseats_Filtered[train,]
+testdata = Carseats_Filtered[-train,]
+rf_tree <- train(Sales~.,
+                 data = Carseats_Filtered,
+                 method = "rf")
+print(rf_tree)
+#The mtry that gives the best performance is the 2nd mtry.
+```
+
+#Question 4: Customize the search grid by checking the model’s performance for mtry values of 2, 3 and 5 using 3 repeats of 5-fold cross validation
+```{r}
+#Using mtry value of 2
+mtry = 2
+train_2 <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
+tunegrid1 <- expand.grid(.mtry=mtry)
+tree2 <- train(Sales~.,
+               method = "rf",
+               data = traindata,
+               trControl = train_2,
+               tuneGrid=tunegrid1
+               )
+print(tree2)
+
+#Using mtry value of 3
+mtry = 3
+train_2 <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
+tunegrid <- expand.grid(.mtry=mtry)
+tree2 <- train(Sales~.,
+               method = "rf",
+               data = traindata,
+               trControl = train_2,
+               tuneGrid=tunegrid
+               )
+print(tree2)
+
+#Using mtry value of 5
+mtry = 5
+train_2 <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
+tunegrid <- expand.grid(.mtry=mtry)
+tree2 <- train(Sales~.,
+               method = "rf",
+               data = traindata,
+               trControl = train_2,
+               tuneGrid=tunegrid
+               )
+print(tree2)
+```
+
+
